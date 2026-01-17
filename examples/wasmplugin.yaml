@@ -1,0 +1,37 @@
+apiVersion: extensions.istio.io/v1alpha1
+kind: WasmPlugin
+metadata:
+  name: http-logger
+  namespace: istio-system
+spec:
+  # Target the Istio ingress gateway
+  selector:
+    matchLabels:
+      istio: ingressgateway
+
+  # URL to the WASM plugin OCI image in GHCR
+  # Use 'latest' for the most recent build, or specify a version tag like 'v1.0.0'
+  url: oci://ghcr.io/liamawhite/proxywasmplugin:latest
+
+  # Phase when the plugin should execute
+  phase: AUTHN
+
+  # Priority within the phase (higher = earlier)
+  priority: 10
+
+---
+# Alternative: Apply to specific workloads
+apiVersion: extensions.istio.io/v1alpha1
+kind: WasmPlugin
+metadata:
+  name: http-logger-workload
+  namespace: default
+spec:
+  # Target specific workloads by label
+  selector:
+    matchLabels:
+      app: my-service
+
+  url: oci://ghcr.io/liamawhite/proxywasmplugin:latest
+  phase: AUTHN
+  priority: 10

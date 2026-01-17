@@ -1,0 +1,21 @@
+# Compiled WASM plugin
+*.wasm
+
+# Go build artifacts
+*.out
+*.test
+*.prof
+
+# Go workspace file
+go.work
+
+# IDE/Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
