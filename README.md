@@ -2,6 +2,8 @@
 
 An Istio WASM plugin built with Go 1.24 and [proxy-wasm-go-sdk](https://github.com/proxy-wasm/proxy-wasm-go-sdk) that logs inbound HTTP requests.
 
+> **Note**: This plugin is intended for testing and validation purposes only. It is not recommended for production use.
+
 ## Features
 
 - Logs HTTP request method, path, and host for all inbound requests
