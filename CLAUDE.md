@@ -29,8 +29,13 @@ make test
 ```bash
 make test-integration
 ```
-Runs integration tests using testcontainers-go against multiple Envoy versions (1.33.0, 1.34.0, 1.35.0).
+Runs integration tests using testcontainers-go against Envoy (defaults to v1.37.0).
 Requires Docker to be running.
+
+To test against a specific Envoy version:
+```bash
+ENVOY_VERSION=v1.35.0 make test-integration
+```
 
 ### Run All Tests
 ```bash
@@ -79,27 +84,33 @@ All logging uses `proxywasm.LogInfof()` and continues request processing with `t
 
 The project includes comprehensive integration tests using testcontainers-go:
 
-- **Test Matrix**: Validates against Envoy 1.33.0, 1.34.0, and 1.35.0
-- **Test Scenarios**: 5 HTTP request patterns per Envoy version
+- **Local Testing**: Tests against latest Envoy version (v1.37.0) by default
+- **CI Matrix**: GitHub Actions tests against Envoy 1.33.0, 1.34.0, 1.35.0, 1.36.0, and 1.37.0 in parallel
+- **Test Scenarios**: 5 HTTP request patterns (GET, POST with query, PUT, DELETE, root path)
 - **Validation**: Verifies plugin loads successfully and logs correct request data
+- **Environment Variable**: Set `ENVOY_VERSION` to test against a specific version
 - **Files**:
   - `integration_test.go` - Main test suite
-  - `internal/testutil/` - Helper utilities for container management
+  - `internal/testutil/` - Helper utilities for container management and version selection
   - `testdata/envoy-config.yaml` - Envoy bootstrap configuration
-- **CI/CD**: Tests run automatically on every PR via GitHub Actions
 
 ## CI/CD
 
-### Build Workflow (.github/workflows/build.yml)
-- **Build Job**: Validates compilation and uploads WASM artifact
-- **Test Job**: Runs integration tests against multiple Envoy versions
-- Runs on every push to main and all pull requests
-- Tests run in parallel for faster feedback
+### Build and Publish Workflow (.github/workflows/build.yml)
 
-### Publish Workflow (.github/workflows/publish.yml)
-- Triggered by: pushes to `main` or version tags (`v*.*.*`)
-- Publishes OCI image to GHCR using Docker
-- Tags: `latest` for main branch, semantic version for tags
+This workflow runs on every push to main, version tags, and all pull requests.
+
+**Jobs:**
+1. **Build Job**: Validates compilation and uploads WASM artifact
+2. **Test Job**: Matrix strategy runs integration tests against 5 Envoy versions in parallel (v1.33.0-v1.37.0)
+   - Each version runs independently for faster feedback
+   - Set to `fail-fast: false` so all versions complete even if one fails
+3. **Publish Job**: Publishes OCI image to GHCR (only runs on push to main/tags, requires both build and all test jobs to pass)
+
+**Publishing:**
+- Only triggers on pushes to `main` or version tags (`v*.*.*`), not on PRs
+- Requires build job and all 5 test matrix jobs to pass
+- Tags: `main` for main branch pushes, semantic version for tags (e.g., `1.0.0`, `1.0`)
 
 ## Deployment
 

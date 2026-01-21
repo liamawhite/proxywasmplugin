@@ -1,5 +1,10 @@
 package testutil
 
+import (
+	"os"
+	"strings"
+)
+
 // EnvoyVersion represents a specific Envoy version to test against.
 type EnvoyVersion struct {
 	// Name is a human-readable identifier for the version
@@ -12,11 +17,29 @@ type EnvoyVersion struct {
 	Source string
 }
 
-// TestVersions defines the matrix of Envoy versions to test against.
-// This list includes both standalone Envoy releases and Istio-bundled versions.
+// GetEnvoyVersion returns the Envoy version to test against.
+// If ENVOY_VERSION environment variable is set, uses that version.
+// Otherwise, defaults to the latest supported version (1.37.0).
+// This allows GitHub Actions matrix to test multiple versions in parallel.
+func GetEnvoyVersion() EnvoyVersion {
+	envoyVersion := os.Getenv("ENVOY_VERSION")
+	if envoyVersion == "" {
+		envoyVersion = "v1.37.0" // Default to latest
+	}
+
+	return EnvoyVersion{
+		Name:   "Envoy " + strings.TrimPrefix(envoyVersion, "v"),
+		Image:  "envoyproxy/envoy",
+		Tag:    envoyVersion,
+		Source: "standalone",
+	}
+}
+
+// TestVersions defines the matrix of Envoy versions to test against in CI.
 // NOTE: proxy-wasm-go-sdk requires Envoy >= 1.33.0 for WASI support
+// In local testing, only the latest version is used (via GetEnvoyVersion).
+// In CI, GitHub Actions matrix runs tests against all these versions in parallel.
 var TestVersions = []EnvoyVersion{
-	// Standalone Envoy versions (>= 1.33.0 required for WASI support)
 	{
 		Name:   "Envoy 1.33.0",
 		Image:  "envoyproxy/envoy",
@@ -33,6 +56,18 @@ var TestVersions = []EnvoyVersion{
 		Name:   "Envoy 1.35.0",
 		Image:  "envoyproxy/envoy",
 		Tag:    "v1.35.0",
+		Source: "standalone",
+	},
+	{
+		Name:   "Envoy 1.36.0",
+		Image:  "envoyproxy/envoy",
+		Tag:    "v1.36.0",
+		Source: "standalone",
+	},
+	{
+		Name:   "Envoy 1.37.0",
+		Image:  "envoyproxy/envoy",
+		Tag:    "v1.37.0",
 		Source: "standalone",
 	},
 	// Istio-bundled Envoy versions (commented out for initial implementation)

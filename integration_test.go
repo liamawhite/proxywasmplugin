@@ -79,54 +79,51 @@ func TestWASMPluginCompatibility(t *testing.T) {
 
 	ctx := context.Background()
 
-	// Test against each Envoy version
-	for _, version := range testutil.TestVersions {
-		version := version // Capture for parallel execution
-		t.Run(version.Name, func(t *testing.T) {
-			t.Parallel() // Run versions in parallel for faster execution
+	// Get Envoy version from environment variable or use default (latest)
+	// In CI, GitHub Actions matrix sets ENVOY_VERSION for each job
+	version := testutil.GetEnvoyVersion()
+	t.Logf("Testing against %s", version.Name)
 
-			// Start Envoy container with WASM plugin
-			envoyContainer := testutil.StartEnvoyContainer(t, ctx, version, pluginPath, configPath)
+	// Start Envoy container with WASM plugin
+	envoyContainer := testutil.StartEnvoyContainer(t, ctx, version, pluginPath, configPath)
 
-			// Wait for Envoy to be fully ready
-			err := envoyContainer.WaitForReady(ctx, 5*time.Second)
-			require.NoError(t, err, "Envoy failed to become ready")
+	// Wait for Envoy to be fully ready
+	err := envoyContainer.WaitForReady(ctx, 5*time.Second)
+	require.NoError(t, err, "Envoy failed to become ready")
 
-			// Get proxy port for sending requests
-			proxyPort, err := envoyContainer.GetProxyPort(ctx)
-			require.NoError(t, err, "Failed to get proxy port")
+	// Get proxy port for sending requests
+	proxyPort, err := envoyContainer.GetProxyPort(ctx)
+	require.NoError(t, err, "Failed to get proxy port")
 
-			host, err := envoyContainer.GetHost(ctx)
-			require.NoError(t, err, "Failed to get container host")
+	host, err := envoyContainer.GetHost(ctx)
+	require.NoError(t, err, "Failed to get container host")
 
-			// Verify plugin loaded successfully
-			assertPluginLoaded(t, envoyContainer)
+	// Verify plugin loaded successfully
+	assertPluginLoaded(t, envoyContainer)
 
-			// Run all test scenarios
-			scenarios := getTestScenarios()
-			for _, scenario := range scenarios {
-				scenario := scenario // Capture for closure
-				t.Run(scenario.Name, func(t *testing.T) {
-					// Send HTTP request to Envoy
-					resp := sendRequest(t, host, proxyPort.Port(), scenario)
+	// Run all test scenarios
+	scenarios := getTestScenarios()
+	for _, scenario := range scenarios {
+		scenario := scenario // Capture for closure
+		t.Run(scenario.Name, func(t *testing.T) {
+			// Send HTTP request to Envoy
+			resp := sendRequest(t, host, proxyPort.Port(), scenario)
 
-					// Verify response
-					assert.Equal(t, http.StatusOK, resp.StatusCode, "Expected 200 OK response")
-					resp.Body.Close()
+			// Verify response
+			assert.Equal(t, http.StatusOK, resp.StatusCode, "Expected 200 OK response")
+			resp.Body.Close()
 
-					// Wait briefly for logs to be captured
-					time.Sleep(100 * time.Millisecond)
+			// Wait briefly for logs to be captured
+			time.Sleep(100 * time.Millisecond)
 
-					// Verify expected log output
-					assertLogContains(t, envoyContainer, scenario.ExpectedLog)
-				})
-			}
-
-			// If test failed, dump all logs for debugging
-			if t.Failed() {
-				t.Logf("=== Envoy Container Logs ===\n%s\n=== End Logs ===", envoyContainer.DumpLogs())
-			}
+			// Verify expected log output
+			assertLogContains(t, envoyContainer, scenario.ExpectedLog)
 		})
+	}
+
+	// If test failed, dump all logs for debugging
+	if t.Failed() {
+		t.Logf("=== Envoy Container Logs ===\n%s\n=== End Logs ===", envoyContainer.DumpLogs())
 	}
 }
 
