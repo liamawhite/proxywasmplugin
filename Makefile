@@ -1,4 +1,4 @@
-.PHONY: build clean test docker-build
+.PHONY: build clean test test-integration test-all docker-build
 
 # Output file
 OUTPUT := plugin.wasm
@@ -6,7 +6,7 @@ OUTPUT := plugin.wasm
 # Build the WASM plugin using Go 1.24
 build:
 	@echo "Building WASM plugin..."
-	GOOS=wasip1 GOARCH=wasm CGO_ENABLED=0 go build -o $(OUTPUT) .
+	GOOS=wasip1 GOARCH=wasm CGO_ENABLED=0 go build -buildmode=c-shared -o $(OUTPUT) .
 	@echo "WASM plugin built successfully: $(OUTPUT)"
 
 # Clean build artifacts
@@ -15,10 +15,19 @@ clean:
 	rm -f $(OUTPUT)
 	@echo "Clean complete"
 
-# Run tests
+# Run unit tests
 test:
-	@echo "Running tests..."
-	go test -v ./...
+	@echo "Running unit tests..."
+	go test -v -short ./...
+
+# Run integration tests (requires plugin.wasm to be built first)
+test-integration: build
+	@echo "Running integration tests..."
+	go test -v -timeout 10m ./...
+
+# Run all tests (unit + integration)
+test-all: test test-integration
+	@echo "All tests complete"
 
 # Build OCI image with WASM artifact
 docker-build: build
