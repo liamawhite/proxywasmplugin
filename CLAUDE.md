@@ -119,7 +119,7 @@ Deploy to Istio using `WasmPlugin` custom resource (see `examples/wasmplugin.yam
 apiVersion: extensions.istio.io/v1alpha1
 kind: WasmPlugin
 spec:
-  url: oci://ghcr.io/liamawhite/proxywasmplugin:latest
+  url: oci://ghcr.io/liamawhite/proxywasmplugin:main
 ```
 
 Logs appear in Envoy proxy logs as:
