@@ -63,7 +63,7 @@ spec:
   selector:
     matchLabels:
       istio: ingressgateway
-  url: oci://ghcr.io/liamawhite/proxywasmplugin:latest
+  url: oci://ghcr.io/liamawhite/proxywasmplugin:main
 ```
 
 ### Verify Logs
